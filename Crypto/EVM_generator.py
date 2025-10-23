@@ -32,8 +32,8 @@ def check_requirements_or_warn():
         # show the required message (in red)
         clear()
         print("\n")
-        print(center_text(f"{RED}Being lazy to read makes you stupid!!!{RESET}"))
-        print(center_text("If requirements.txt is not installed, please install it first"))
+        print(center_text(f"   {RED}Being lazy to read makes you stupid!!!{RESET}"))
+        print(center_text(". If requirements.txt is not installed, please install it first"))
         print("\n")
         input(center_text("Press [ENTER] to return"))
         return False
