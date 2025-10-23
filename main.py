@@ -18,7 +18,7 @@ main_menu = [
     ("         Exit", "Exit")
 ]
 
-# Placeholder menus (spasi tetap)
+# Gmail menu
 gmail_menu = [
     ("         DotTrick", "DotTrick"),
     ("         CapitalTrick (Telegram)", "CapitalTrick"),
@@ -26,6 +26,7 @@ gmail_menu = [
     ("         Exit", "Exit")
 ]
 
+# Crypto menu
 crypto_menu = [
     ("         Generate Wallet", "GenerateWallet"),
     ("         Batch Sender", "BatchSender"),
@@ -62,7 +63,10 @@ def print_menu(menu, selected, header):
     print_datetime_header()
     print(center_text(header))
     for i, (label, key) in enumerate(menu):
-        color = BRIGHT_GREEN if key not in ["Exit"] else RED
+        if key in ["Exit", "Back"]:
+            color = RED
+        else:
+            color = BRIGHT_GREEN
         pointer = " ◀" if i == selected else ""
         print(center_text(f"{color}{label}{RESET}{pointer}"))
     print("\n")
@@ -84,7 +88,9 @@ def menu_loop(menu, header, actions=None):
             choice = menu[selected][1]
             if choice == "Exit":
                 sys.exit()
-            if actions and choice in actions:
+            elif choice == "Back":
+                return  # kembali ke menu sebelumnya
+            elif actions and choice in actions:
                 actions[choice]()
             else:
                 print(center_text(f"Selected: {choice}"))
@@ -108,7 +114,9 @@ def load_gmail_actions():
 
 def gmail_menu_loop():
     actions = load_gmail_actions()
-    menu_loop(gmail_menu, "=== Gmail Menu ===", actions)
+    while True:
+        menu_loop(gmail_menu, "=== Gmail Menu ===", actions)
+        break  # keluar ke menu utama saat Back ditekan
 
 # ----- Crypto Actions -----
 def load_crypto_actions():
@@ -127,7 +135,9 @@ def load_crypto_actions():
 
 def crypto_menu_loop():
     actions = load_crypto_actions()
-    menu_loop(crypto_menu, "=== Crypto Menu ===", actions)
+    while True:
+        menu_loop(crypto_menu, "=== Crypto Menu ===", actions)
+        break  # keluar ke menu utama saat Back ditekan
 
 # ----- Main Actions -----
 def main_menu_actions():
