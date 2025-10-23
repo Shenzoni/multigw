@@ -2,12 +2,12 @@
 import os
 import sys
 import time
-import subprocess
 
-# Colors
-BRIGHT_GREEN = "\033[92m"
+# colors
+BRIGHT_GREEN   = "\033[92m"
 BRIGHT_MAGENTA = "\033[95m"
-RESET = "\033[0m"
+RESET          = "\033[0m"
+RED            = "\033[31m"
 
 def clear():
     os.system("clear")
@@ -19,23 +19,23 @@ def center_text(text):
         width = 80
     return text.center(width)
 
-def ensure_libraries():
-    """Ensure mnemonic and bip-utils are installed"""
+def check_requirements_or_warn():
+    """
+    Do NOT auto-install. If required packages are missing,
+    show message and return False.
+    """
     try:
         import mnemonic
         import bip_utils
         return True
-    except ImportError:
-        print("\nInstalling required libraries 'mnemonic' and 'bip-utils' ...")
-        subprocess.run([sys.executable, "-m", "pip", "install", "mnemonic", "bip-utils"], check=False)
-    try:
-        import mnemonic
-        import bip_utils
-        print("Libraries installed successfully!")
-        time.sleep(1)
-        return True
-    except ImportError:
-        print("Failed to import libraries. Check your environment.")
+    except Exception:
+        # show the required message (in red)
+        clear()
+        print("\n")
+        print(center_text(f"{RED}Being lazy to read makes you stupid!!!{RESET}"))
+        print(center_text("If requirements.txt is not installed, please install it first"))
+        print("\n")
+        input(center_text("Press [ENTER] to return"))
         return False
 
 def ask_positive_int(prompt, min_value=1):
@@ -60,12 +60,13 @@ def ask_interval(prompt, min_interval=0.5):
 
 def generate_wallet_evm_flow():
     clear()
-    print(center_text("=== EVM Wallet Generator (BIP39 + Keys) ===\n"))
-
-    if not ensure_libraries():
-        input("\nPress [ENTER] to return...")
+    print(center_text("=== EVM Wallet Generator (BIP39 + Keys) ==="))
+    print("\n")
+    # If requirements not met, warn and return (NO auto-install)
+    if not check_requirements_or_warn():
         return
 
+    # Now safe to import libs
     from mnemonic import Mnemonic
     from bip_utils import Bip39SeedGenerator, Bip44, Bip44Coins
 
@@ -80,19 +81,16 @@ def generate_wallet_evm_flow():
     print("\n")
 
     for i in range(count):
-        # Generate 12-word seed
         seed_phrase = mnemo.generate(strength=128)
-
-        # Derive private/public key
         seed_bytes = Bip39SeedGenerator(seed_phrase).Generate()
         bip44_wallet = Bip44.FromSeed(seed_bytes, Bip44Coins.ETHEREUM).DeriveDefaultPath()
         private_key = bip44_wallet.PrivateKey().Raw().ToHex()
         public_key  = bip44_wallet.PublicKey().RawCompressed().ToHex()
 
         # Print with colors
-        print(f"{BRIGHT_GREEN}Seed{i+1}: {seed_phrase}{RESET}")
-        print(f"{BRIGHT_GREEN}Private Key: {private_key}{RESET}")
-        print(f"{BRIGHT_MAGENTA}Public Key:  {public_key}{RESET}\n")
+        print(f"{BRIGHT_GREEN}{i+1}. Seed: {seed_phrase}{RESET}")
+        print(f"{BRIGHT_GREEN}   Private Key: {private_key}{RESET}")
+        print(f"{BRIGHT_MAGENTA}   Public Key:  {public_key}{RESET}\n")
 
         if i < count - 1:
             time.sleep(interval)
@@ -100,5 +98,6 @@ def generate_wallet_evm_flow():
     print("\nAll wallets generated! Press [ENTER] to return")
     input()
 
+# If script called directly
 if __name__ == "__main__":
     generate_wallet_evm_flow()
