@@ -1,3 +1,3 @@
-readchar
-mnemonic
-bip-utils
+readchar>=3.0.0
+mnemonic>=0.20
+bip-utils>=2.7.0
