@@ -15,13 +15,17 @@ next for run :
 if you need to try use " BATCH SENDER " you must create file private.csv/batchpk.csv first, because for batch sender/burn menu you must have the private.csv/batchpk.csv file for run and you can paste your PrivateKey on private.csv/batchpk.csv
 
 for example :
+
 A. you need to send 1>100
+
 _so you need file private.csv_
 **_in this file you have to enter 1 private keys for the purpose of sending the main token (ETH) to 100 wallet)_**
 
 B. you need to send 100>1
+
 _so you need file batchpk.csv_
 **_in this file you have to enter 100 private keys for the purpose of sending the main token (ETH) to 1 wallet)_**
+
 
 if you need to try use " BATCH BURN " you must create file burnpk.csv
 **_in this file you have to enter 100 private keys for the purpose of sending the main token (SOL) after burn to 1 wallet)_**
