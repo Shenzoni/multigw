@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import sys
 import readchar
 import time
 
@@ -9,21 +10,54 @@ RED          = "\033[31m"
 PINK         = "\033[95m"
 RESET        = "\033[0m"
 
-# ---------- Menu Definitions ----------
+# ---------- Add repo folder to path ----------
+sys.path.append(os.path.dirname(__file__))  # folder multigw harus sama dengan main.py
+
+# ---------- Import modular scripts ----------
+try:
+    from dottrick import dottrick_flow
+    from captrick import capitaltrick_flow
+except ImportError:
+    print("Failed to import Gmail modules. Make sure dottrick.py and captrick.py exist.")
+    input("Press [ENTER] to exit...")
+    sys.exit(1)
+
+try:
+    from EVM_generator import generate_wallet_evm_flow
+    # Add other wallet modules later: SOLANA, TRON, TON, SUI, APTOS, BITCOIN
+except ImportError:
+    print("Failed to import wallet modules. Make sure EVM_generator.py exists.")
+    input("Press [ENTER] to exit...")
+    sys.exit(1)
+
+# ---------- Menus ----------
 main_menu = [
     ("         Gmail (Menu)", "Gmail"),
     ("         Crypto (Menu)", "Crypto"),
     ("         Exit", "Exit")
 ]
 
-gmail_menu = [
-    ("         DotTrick", "DotTrick"),
-    ("         CapitalTrick (Telegram)", "CapitalTrick"),
+crypto_menu = [
+    ("         Generate Wallet", "GenerateWallet"),
+    ("         Batch Sender", "BatchSender"),
+    ("         Batch Burn", "BatchBurn"),
     ("         Back", "Back"),
     ("         Exit", "Exit")
 ]
 
-# ---------- Helpers ----------
+generate_wallet_menu = [
+    ("         EVM", "EVM"),
+    ("         SOLANA", "SOLANA"),
+    ("         TRON", "TRON"),
+    ("         TON", "TON"),
+    ("         SUI", "SUI"),
+    ("         APTOS", "APTOS"),
+    ("         BITCOIN", "BITCOIN"),
+    ("         Back", "Back"),
+    ("         Exit", "Exit")
+]
+
+# ---------- Helper functions ----------
 def clear():
     os.system("clear")
 
@@ -45,121 +79,63 @@ def print_menu(menu, selected, header):
         print(center_text(f"{color}{label}{RESET}{pointer}"))
     print("\n")
 
-# ---------- Gmail Helpers ----------
-def gen_dot_variants(local):
-    n = len(local)
-    if n <= 1:
-        yield local
-        return
-    total = 1 << (n - 1)
-    cap = 512
-    limit = min(total, cap)
-    for mask in range(limit):
-        parts = []
-        for i, ch in enumerate(local):
-            parts.append(ch)
-            if i < n - 1 and ((mask >> i) & 1):
-                parts.append('.')
-        yield ''.join(parts)
-
-def gen_capital_variants(local):
-    n = len(local)
-    if n == 0:
-        yield local
-        return
-    total = 1 << n
-    cap = 512
-    limit = min(total, cap)
-    for mask in range(limit):
-        s = []
-        for i, ch in enumerate(local):
-            if ((mask >> i) & 1):
-                s.append(ch.upper())
-            else:
-                s.append(ch.lower())
-        yield ''.join(s)
-
-def ask_generate_count():
-    while True:
-        v = input("Generate berapa : ").strip()
-        if not v.isdigit() or int(v)<=0:
-            print("Masukin angka bulat positif.")
-            continue
-        return int(v)
-
-def output_with_count(variants_list, domain, requested_count, delay_per_item=0.5):
-    printed = 0
-    idx = 0
-    total_variants = len(variants_list)
-    if total_variants == 0:
-        return
-    while printed < requested_count:
-        local_variant = variants_list[idx % total_variants]
-        candidate = f"{local_variant}@{domain}"
-        print(candidate)
-        printed += 1
-        idx += 1
-        if printed < requested_count:
-            time.sleep(delay_per_item)
-
-# ---------- Gmail Flows ----------
-def dottrick_flow():
-    clear()
-    print(center_text("=== DotTrick ==="))
-    print("\n")
-    gmail_input = input("Masukin Gmail lu : ").strip()
-    if '@' not in gmail_input:
-        print("\nInput gak valid. Contoh: contoh@gmail.com")
-        input("\nTekan [ENTER] untuk kembali...")
-        return
-
-    local, domain = gmail_input.split('@', 1)
-    local = local.strip()
-    domain = domain.strip()
-
-    unique_variants = list(gen_dot_variants(local))
-    count = ask_generate_count()
-
-    clear()
-    print(center_text("Wait gua lagi generate ⏳⏳⏳"))
-    time.sleep(2)
-    print("\n")
-
-    output_with_count(unique_variants, domain, count, delay_per_item=0.5)
-
-    print("\nTekan [ENTER] untuk kembali")
-    input()
-
-def capitaltrick_flow():
-    clear()
-    print(center_text("=== CapitalTrick ==="))
-    print("\n")
-    gmail_input = input("Masukin Gmail lu : ").strip()
-    if '@' not in gmail_input:
-        print("\nInput gak valid. Contoh: contoh@gmail.com")
-        input("\nTekan [ENTER] untuk kembali...")
-        return
-
-    local, domain = gmail_input.split('@', 1)
-    local = local.strip()
-    domain = domain.strip()
-
-    unique_variants = list(gen_capital_variants(local))
-    count = ask_generate_count()
-
-    clear()
-    print(center_text("Wait gua lagi generate ⏳⏳⏳"))
-    time.sleep(2)
-    print("\n")
-
-    output_with_count(unique_variants, domain, count, delay_per_item=0.5)
-
-    print("\nTekan [ENTER] untuk kembali")
-    input()
-
 # ---------- Menu Loops ----------
+def generate_wallet_loop():
+    selected = 0
+    while True:
+        print_menu(generate_wallet_menu, selected, "=== Generate Wallet ===")
+        key = readchar.readkey()
+        if key == readchar.key.UP:
+            selected = (selected - 1) % len(generate_wallet_menu)
+        elif key == readchar.key.DOWN:
+            selected = (selected + 1) % len(generate_wallet_menu)
+        elif key == readchar.key.ENTER:
+            choice = generate_wallet_menu[selected][1]
+            if choice == "EVM":
+                generate_wallet_evm_flow()
+            elif choice == "Back":
+                return
+            elif choice == "Exit":
+                clear()
+                print("\nExiting script...\n")
+                exit()
+            else:
+                clear()
+                print(center_text(f"{choice} selected - module not implemented yet"))
+                input("\nPress [ENTER] to return")
+
+def crypto_menu_loop():
+    selected = 0
+    while True:
+        print_menu(crypto_menu, selected, "=== Crypto Menu ===")
+        key = readchar.readkey()
+        if key == readchar.key.UP:
+            selected = (selected - 1) % len(crypto_menu)
+        elif key == readchar.key.DOWN:
+            selected = (selected + 1) % len(crypto_menu)
+        elif key == readchar.key.ENTER:
+            choice = crypto_menu[selected][1]
+            if choice == "GenerateWallet":
+                generate_wallet_loop()
+            elif choice in ["BatchSender", "BatchBurn"]:
+                clear()
+                print(center_text(f"{choice} menu - module not implemented yet"))
+                input("\nPress [ENTER] to return")
+            elif choice == "Back":
+                return
+            elif choice == "Exit":
+                clear()
+                print("\nExiting script...\n")
+                exit()
+
 def gmail_menu_loop():
     selected = 0
+    gmail_menu = [
+        ("         DotTrick", "DotTrick"),
+        ("         CapitalTrick (Telegram)", "CapitalTrick"),
+        ("         Back", "Back"),
+        ("         Exit", "Exit")
+    ]
     while True:
         print_menu(gmail_menu, selected, "=== Gmail Menu ===")
         key = readchar.readkey()
@@ -177,7 +153,7 @@ def gmail_menu_loop():
                 return
             elif choice == "Exit":
                 clear()
-                print("\nKeluar dari script...\n")
+                print("\nExiting script...\n")
                 exit()
 
 def main_menu_loop():
@@ -194,12 +170,10 @@ def main_menu_loop():
             if choice == "Gmail":
                 gmail_menu_loop()
             elif choice == "Crypto":
-                clear()
-                print(center_text("Crypto Menu placeholder"))
-                input("\nTekan [ENTER] untuk kembali...")
+                crypto_menu_loop()
             elif choice == "Exit":
                 clear()
-                print("\nKeluar dari script...\n")
+                print("\nExiting script...\n")
                 exit()
 
 # ---------- Main ----------
