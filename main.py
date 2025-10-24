@@ -143,34 +143,52 @@ def gmail_menu_loop():
 def load_crypto_actions():
     actions = {}
     try:
-        from Crypto import EVM_generator
+        from Crypto.Generator import EVM as EVM_generator
         actions["GenerateWallet"] = lambda: generate_wallet_menu_loop()
     except Exception:
-        # ensure GenerateWallet still routes to our submenu even if module missing
-        actions["GenerateWallet"] = lambda: generate_wallet_menu_loop()
-    # placeholders for other crypto top-level items
-    actions["BatchSender"] = lambda: input(center_text("Batch Sender placeholder. Press [ENTER] to return"))
-    actions["BatchBurn"] = lambda: input(center_text("Batch Burn placeholder. Press [ENTER] to return"))
-    actions["Back"] = lambda: None
-    actions["Exit"] = lambda: None
+        actions["GenerateWallet"] = lambda: input(center_text("EVM_generator module missing. Press [ENTER] to return"))
     return actions
 
-def crypto_menu_loop():
-    actions = load_crypto_actions()
-    while True:
-        menu_loop(crypto_menu, "=== Crypto Menu ===", actions)
-        return
 
-# ---------- Generate Wallet submenu loop ----------
 def generate_wallet_menu_loop():
     # load chain actions - EVM implemented, others placeholder that can be replaced by real modules
     chain_actions = {}
     try:
-        from Crypto import EVM_generator
+        from Crypto.Generator import EVM as EVM_generator
         chain_actions["EVM"] = EVM_generator.generate_wallet_evm_flow
     except Exception:
         chain_actions["EVM"] = lambda: input(center_text("EVM_generator module missing. Press [ENTER] to return"))
 
+    # menu tampilan untuk Generate Wallet
+    menu = [
+        ("EVM", "EVM"),
+        ("TON", "TON"),
+        ("SOL", "SOL"),
+        ("SUI", "SUI"),
+        ("APTOS", "APTOS"),
+        ("BITCOIN", "BITCOIN"),
+        ("Back", "Back"),
+        ("Exit", "Exit")
+    ]
+
+    selected = 0
+    while True:
+        print_menu(menu, selected, "=== Generate Wallet Menu ===")
+        key = readchar.readkey()
+        if key == readchar.key.UP:
+            selected = (selected - 1) % len(menu)
+        elif key == readchar.key.DOWN:
+            selected = (selected + 1) % len(menu)
+        elif key == readchar.key.ENTER:
+            choice = menu[selected][1]
+            if choice == "Back":
+                return
+            elif choice == "Exit":
+                sys.exit()
+            elif choice in chain_actions:
+                chain_actions[choice]()
+            else:
+                input(center_text(f"{choice} generator not implemented yet. Press [ENTER] to return"))
     # placeholders for non-implemented chains (can be replaced with real modules the same way)
     chain_actions["TON"] = lambda: input(center_text("TON generator placeholder. Press [ENTER] to return"))
     chain_actions["SOL"] = lambda: input(center_text("SOL generator placeholder. Press [ENTER] to return"))
