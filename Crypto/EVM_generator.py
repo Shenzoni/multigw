@@ -4,8 +4,8 @@ import sys
 import time
 
 # colors
-BRIGHT_GREEN   = "\033[92m"
-BRIGHT_MAGENTA = "\033[95m"
+BRIGHT_MAGENTA = "\033[95m"   # for Seed & Private Key (ungu terang)
+BRIGHT_GREEN   = "\033[92m"   # for Public Key (hijau terang)
 RESET          = "\033[0m"
 RED            = "\033[31m"
 
@@ -19,23 +19,24 @@ def center_text(text):
         width = 80
     return text.center(width)
 
-def check_requirements_or_warn():
+def warn_requirements_and_return():
+    clear()
+    print("\n")
+    print(center_text(f"{RED}Being lazy to read makes you stupid!!!{RESET}"))
+    print(center_text("If requirements.txt is not installed, please install it first"))
+    print("\n")
+    input(center_text("Press [ENTER] to return"))
+    return
+
+def check_requirements():
     """
-    Do NOT auto-install. If required packages are missing,
-    show message and return False.
+    Do NOT auto-install. If missing, return False.
     """
     try:
         import mnemonic
         import bip_utils
         return True
     except Exception:
-        # show the required message (in red)
-        clear()
-        print("\n")
-        print(center_text(f"   {RED}Being lazy to read makes you stupid!!!{RESET}"))
-        print(center_text(". If requirements.txt is not installed, please install it first"))
-        print("\n")
-        input(center_text("Press [ENTER] to return"))
         return False
 
 def ask_positive_int(prompt, min_value=1):
@@ -52,7 +53,8 @@ def ask_interval(prompt, min_interval=0.5):
         try:
             f = float(v)
             if f < min_interval:
-                print(f"Minimum interval is {min_interval} seconds")
+                # custom insult per request
+                print(f"\n{RED}Why you set below minimal interval? Are you stupid?{RESET}\n")
                 continue
             return f
         except ValueError:
@@ -62,42 +64,50 @@ def generate_wallet_evm_flow():
     clear()
     print(center_text("=== EVM Wallet Generator (BIP39 + Keys) ==="))
     print("\n")
-    # If requirements not met, warn and return (NO auto-install)
-    if not check_requirements_or_warn():
+
+    # check dependencies - DO NOT auto-install
+    if not check_requirements():
+        warn_requirements_and_return()
         return
 
-    # Now safe to import libs
+    # imports only if present
     from mnemonic import Mnemonic
     from bip_utils import Bip39SeedGenerator, Bip44, Bip44Coins
 
     mnemo = Mnemonic("english")
 
-    count = ask_positive_int("How many wallets to generate: ")
-    interval = ask_interval("Interval between each wallet (min 0.5s): ", 0.5)
+    # ask how many
+    count = ask_positive_int("How many wallets do you want to generate? : ")
+
+    # ask interval
+    interval = ask_interval("Set interval (min 0.5 seconds) : ")
 
     clear()
     print(center_text("Generating wallets... ⏳⏳⏳"))
     time.sleep(2)
     print("\n")
 
-    for i in range(count):
+    for i in range(1, count + 1):
+        # generate 12-word seed
         seed_phrase = mnemo.generate(strength=128)
+
+        # derive keys (EVM / ETH derivation via bip-utils)
         seed_bytes = Bip39SeedGenerator(seed_phrase).Generate()
         bip44_wallet = Bip44.FromSeed(seed_bytes, Bip44Coins.ETHEREUM).DeriveDefaultPath()
         private_key = bip44_wallet.PrivateKey().Raw().ToHex()
-        public_key  = bip44_wallet.PublicKey().RawCompressed().ToHex()
+        public_key  = bip44_wallet.PublicKey().ToAddress()  # address string (eth address)
 
-        # Print with colors
-        print(f"{BRIGHT_GREEN}{i+1}. Seed: {seed_phrase}{RESET}")
-        print(f"{BRIGHT_GREEN}   Private Key: {private_key}{RESET}")
-        print(f"{BRIGHT_MAGENTA}   Public Key:  {public_key}{RESET}\n")
+        # print colored output per request
+        print(f"{BRIGHT_MAGENTA}{i}. Seed phrase: {seed_phrase}{RESET}")
+        print(f"{BRIGHT_MAGENTA}   Private key: {private_key}{RESET}")
+        print(f"{BRIGHT_GREEN}   Public key : {public_key}{RESET}\n")
 
-        if i < count - 1:
+        if i < count:
             time.sleep(interval)
 
     print("\nAll wallets generated! Press [ENTER] to return")
     input()
 
-# If script called directly
+# allow running this module directly
 if __name__ == "__main__":
     generate_wallet_evm_flow()
