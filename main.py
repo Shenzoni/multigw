@@ -5,28 +5,20 @@ import readchar
 import datetime
 
 # colors
-BRIGHT_GREEN = "\033[92m"
-BRIGHT_BLUE  = "\033[94m"
+BRIGHT_GREEN   = "\033[92m"
+BRIGHT_BLUE    = "\033[94m"
 BRIGHT_MAGENTA = "\033[95m"
-RESET = "\033[0m"
-RED = "\033[31m"
+RESET          = "\033[0m"
+RED            = "\033[31m"
 
-# Main menu
+# main menu
 main_menu = [
     ("         Gmail (Menu)", "Gmail"),
     ("         Crypto (Menu)", "Crypto"),
     ("         Exit", "Exit")
 ]
 
-# Gmail menu
-gmail_menu = [
-    ("         DotTrick", "DotTrick"),
-    ("         CapitalTrick (Telegram)", "CapitalTrick"),
-    ("         Back", "Back"),
-    ("         Exit", "Exit")
-]
-
-# Crypto menu
+# crypto submenu (top)
 crypto_menu = [
     ("         Generate Wallet", "GenerateWallet"),
     ("         Batch Sender", "BatchSender"),
@@ -35,7 +27,18 @@ crypto_menu = [
     ("         Exit", "Exit")
 ]
 
-# ----- Helpers -----
+# generate-wallet menu (list chains)
+generate_wallet_menu = [
+    ("         EVM", "EVM"),
+    ("         TON", "TON"),
+    ("         SOL", "SOL"),
+    ("         SUI", "SUI"),
+    ("         APTOS", "APTOS"),
+    ("         BITCOIN", "BITCOIN"),
+    ("         Back", "Back"),
+    ("         Exit", "Exit")
+]
+
 def clear():
     os.system("clear")
 
@@ -63,10 +66,8 @@ def print_menu(menu, selected, header):
     print_datetime_header()
     print(center_text(header))
     for i, (label, key) in enumerate(menu):
-        if key in ["Exit", "Back"]:
-            color = RED
-        else:
-            color = BRIGHT_GREEN
+        # Back and Exit are red per request
+        color = RED if key in ["Exit", "Back"] else BRIGHT_GREEN
         pointer = " ◀" if i == selected else ""
         print(center_text(f"{color}{label}{RESET}{pointer}"))
     print("\n")
@@ -86,70 +87,110 @@ def menu_loop(menu, header, actions=None):
             selected = (selected + 1) % len(menu)
         elif key == readchar.key.ENTER:
             choice = menu[selected][1]
+
+            # Exit always quits
             if choice == "Exit":
-                sys.exit()
-            elif choice == "Back":
-                return  # kembali ke menu sebelumnya
-            elif actions and choice in actions:
-                actions[choice]()
+                clear()
+                print("\nExiting script...\n")
+                sys.exit(0)
+
+            # Back returns to caller
+            if choice == "Back":
+                return
+
+            # If an action exists, call it
+            if actions and choice in actions:
+                try:
+                    actions[choice]()
+                except Exception as e:
+                    clear()
+                    print(center_text("An error occurred while running action:"))
+                    print(center_text(str(e)))
+                    input(center_text("Press [ENTER] to return"))
+                # after action returns, loop continues
             else:
+                clear()
                 print(center_text(f"Selected: {choice}"))
                 input(center_text("Press [ENTER] to return"))
 
-# ----- Gmail Actions -----
+# ---------- Load Gmail actions (placeholders if missing) ----------
 def load_gmail_actions():
     actions = {}
     try:
-        from Gmail import dottrick
-        from Gmail import captrick
+        from Gmail import dottrick, captrick
         actions["DotTrick"] = dottrick.dottrick_flow
         actions["CapitalTrick"] = captrick.capitaltrick_flow
-    except Exception as e:
-        print("Gmail module missing:", e)
-        actions["DotTrick"] = lambda: input("DotTrick placeholder [ENTER]")
-        actions["CapitalTrick"] = lambda: input("CapitalTrick placeholder [ENTER]")
+    except Exception:
+        actions["DotTrick"] = lambda: input(center_text("DotTrick module missing. Press [ENTER] to return"))
+        actions["CapitalTrick"] = lambda: input(center_text("CapitalTrick module missing. Press [ENTER] to return"))
     actions["Back"] = lambda: None
-    actions["Exit"] = sys.exit
+    actions["Exit"] = lambda: None
     return actions
 
 def gmail_menu_loop():
+    gmail_menu = [
+        ("         DotTrick", "DotTrick"),
+        ("         CapitalTrick (Telegram)", "CapitalTrick"),
+        ("         Back", "Back"),
+        ("         Exit", "Exit")
+    ]
     actions = load_gmail_actions()
     while True:
         menu_loop(gmail_menu, "=== Gmail Menu ===", actions)
-        break  # keluar ke menu utama saat Back ditekan
+        return  # back to main
 
-# ----- Crypto Actions -----
+# ---------- Load Crypto actions ----------
 def load_crypto_actions():
     actions = {}
     try:
         from Crypto import EVM_generator
-        actions["GenerateWallet"] = EVM_generator.generate_wallet_evm_flow
-    except Exception as e:
-        print("Crypto module missing:", e)
-        actions["GenerateWallet"] = lambda: input("GenerateWallet placeholder [ENTER]")
-    actions["BatchSender"] = lambda: input("BatchSender placeholder [ENTER]")
-    actions["BatchBurn"] = lambda: input("BatchBurn placeholder [ENTER]")
+        actions["GenerateWallet"] = lambda: generate_wallet_menu_loop()
+    except Exception:
+        # ensure GenerateWallet still routes to our submenu even if module missing
+        actions["GenerateWallet"] = lambda: generate_wallet_menu_loop()
+    # placeholders for other crypto top-level items
+    actions["BatchSender"] = lambda: input(center_text("Batch Sender placeholder. Press [ENTER] to return"))
+    actions["BatchBurn"] = lambda: input(center_text("Batch Burn placeholder. Press [ENTER] to return"))
     actions["Back"] = lambda: None
-    actions["Exit"] = sys.exit
+    actions["Exit"] = lambda: None
     return actions
 
 def crypto_menu_loop():
     actions = load_crypto_actions()
     while True:
         menu_loop(crypto_menu, "=== Crypto Menu ===", actions)
-        break  # keluar ke menu utama saat Back ditekan
+        return
 
-# ----- Main Actions -----
-def main_menu_actions():
-    return {
+# ---------- Generate Wallet submenu loop ----------
+def generate_wallet_menu_loop():
+    # load chain actions - EVM implemented, others placeholder that can be replaced by real modules
+    chain_actions = {}
+    try:
+        from Crypto import EVM_generator
+        chain_actions["EVM"] = EVM_generator.generate_wallet_evm_flow
+    except Exception:
+        chain_actions["EVM"] = lambda: input(center_text("EVM_generator module missing. Press [ENTER] to return"))
+
+    # placeholders for non-implemented chains (can be replaced with real modules the same way)
+    chain_actions["TON"] = lambda: input(center_text("TON generator placeholder. Press [ENTER] to return"))
+    chain_actions["SOL"] = lambda: input(center_text("SOL generator placeholder. Press [ENTER] to return"))
+    chain_actions["SUI"] = lambda: input(center_text("SUI generator placeholder. Press [ENTER] to return"))
+    chain_actions["APTOS"] = lambda: input(center_text("APTOS generator placeholder. Press [ENTER] to return"))
+    chain_actions["BITCOIN"] = lambda: input(center_text("BITCOIN generator placeholder. Press [ENTER] to return"))
+    chain_actions["Back"] = lambda: None
+    chain_actions["Exit"] = lambda: None
+
+    # call the menu loop for generate_wallet_menu
+    menu_loop(generate_wallet_menu, "=== Generate Wallet ===", chain_actions)
+    # when Back is chosen, menu_loop returns here and we go back to Crypto menu
+
+# ---------- Main ----------
+def main():
+    actions = {
         "Gmail": gmail_menu_loop,
         "Crypto": crypto_menu_loop,
-        "Exit": sys.exit
+        "Exit": lambda: sys.exit(0)
     }
-
-# ----- Main -----
-def main():
-    actions = main_menu_actions()
     menu_loop(main_menu, "=== Main Menu ===", actions)
 
 if __name__ == "__main__":
